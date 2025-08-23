@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대한민국 B2G 신(新)시장 기회 탐색 대시보드</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The application is designed as a single-page, scrollable dashboard with a sticky navigation bar. This structure allows users to get a high-level overview first (investment chart, key goals) and then dive deep into thematic sections (AI, Green, etc.). The core interaction is a master-detail pattern within each theme, where selecting a project from a list dynamically displays its specific business opportunities. This user-centric design prioritizes quick, non-linear exploration of relevant information over the linear structure of the source reports, making it highly efficient for business users seeking specific opportunities. -->
+    <!-- Visualization & Content Choices: 
+        1. Investment Breakdown: Report Info -> 210조원 재정 투자 계획. Goal -> Inform & Compare budget allocation. Viz -> Donut Chart (Chart.js). Interaction -> Hover for details, clickable legend. Justification -> Provides an immediate, powerful visual summary of the government's financial priorities. Library -> Chart.js on Canvas.
+        2. Thematic Opportunities: Report Info -> Detailed descriptions of 123 national tasks and 30 pioneer projects. Goal -> Organize & Detail specific business opportunities. Presentation -> Interactive Master-Detail UI (HTML/JS). Interaction -> Click list item to update detail panel. Justification -> Prevents information overload and allows users to self-navigate to the most relevant content efficiently. Method -> Vanilla JS DOM manipulation.
+        3. Key Goals: Report Info -> Quantitative targets like 'AI 3대 강국', '공적주택 110만호'. Goal -> Inform & highlight the scale of ambition. Presentation -> Styled HTML/Tailwind cards. Interaction -> None. Justification -> Easily scannable and provides quick context. Method -> HTML/Tailwind.
+        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f7f4;
+            color: #333;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #2563eb;
+            border-bottom-color: #2563eb;
+        }
+        .project-item {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .project-item.active, .project-item:hover {
+            background-color: #e0e7ff;
+            color: #1e40af;
+            transform: translateX(4px);
+        }
+        .content-card {
+            transition: all 0.3s ease-in-out;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-100 text-gray-800">
+
+    <header class="bg-white/80 backdrop-blur-lg shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <a href="https://www.cliwant.com/ko" target="_blank" rel="noopener noreferrer" class="text-xl md:text-2xl font-bold text-blue-700">Cliwant</a>
+                </div>
+                <div class="hidden md:block">
+                    <div id="nav-menu" class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">개요</a>
+                        <a href="#ai" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">AI·디지털</a>
+                        <a href="#green" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">그린 전환</a>
+                        <a href="#infra" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">미래 인프라</a>
+                        <a href="#innovation" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">혁신 성장</a>
+                        <a href="#social" class="nav-link text-gray-600 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">사회 서비스</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="hero" class="text-center py-12 md:py-20">
+            <h2 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight">
+                <span class="text-blue-600">210조 B2G 신(新)시장</span>의 기회를 탐색하세요
+            </h2>
+            <p class="mt-4 max-w-2xl mx-auto text-lg text-gray-600">
+                정부의 '국정운영 5개년 계획'과 '경제성장전략'을 기반으로 미래 B2G 시장의 핵심 사업 기회와 인사이트를 제공합니다.
+            </p>
+        </section>
+
+        <section class="text-center pb-8">
+            <a href="https://tally.so/r/3l81Q5" target="_blank" rel="noopener noreferrer" class="inline-block bg-blue-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-lg">
+                B2G 사업 기회 분석 리포트 신청하기
+            </a>
+        </section>
+
+        <section id="overview" class="py-12 scroll-mt-20">
+            <h3 class="text-3xl font-bold text-center mb-10">국정 과제 핵심 요약</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-xl shadow-lg">
+                    <h4 class="text-xl font-semibold text-center mb-4">5개년(2026-2030) 추가 재정 투자 (총 210조 원)</h4>
+                    <div class="chart-container">
+                        <canvas id="investmentChart"></canvas>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="text-4xl">💡</div>
+                        <div>
+                            <h5 class="text-xl font-bold text-blue-700">AI 3대 강국 도약</h5>
+                            <p class="text-gray-600">GPU 5만 장 확보, AI 팩토리 500개소, 세계 1위 AI 정부 실현</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="text-4xl">🚀</div>
+                        <div>
+                            <h5 class="text-xl font-bold text-green-700">방산 4대 강국 진입</h5>
+                            <p class="text-gray-600">첨단 국방 시스템 개발 및 K-방산 공급망 강화</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4">
+                        <div class="text-4xl">🏠</div>
+                        <div>
+                            <h5 class="text-xl font-bold text-yellow-700">공적주택 110만 호 공급</h5>
+                            <p class="text-gray-600">주거 안정 및 도시재생 사업을 통한 대규모 건설 시장 형성</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="opportunity-sections"></div>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2025 B2G Opportunity Explorer. Cliwant. All rights reserved.</p>
+            <p class="text-sm text-gray-400 mt-1">본 데이터는 공개된 정부 문서를 기반으로 분석되었으며, 참고 자료로만 활용하시기 바랍니다.</p>
+        </div>
+    </footer>
+
+    <script>
+        const opportunityData = {
+            ai: {
+                title: "AI·디지털 전환",
+                description: "정부는 AI를 국가 핵심 기반 인프라로 규정하고 'AI 3대 강국' 도약을 목표로 총 25조 원을 투자합니다. 단순 솔루션 개발을 넘어 국가 기간망 구축 파트너로서의 거대한 기회가 열립니다.",
+                icon: "💡",
+                projects: [
+                    { id: 'ai_highway', name: "'AI 고속도로' 건설" },
+                    { id: 'ai_gov', name: "'AI 정부' 실현" },
+                    { id: 'ai_industry', name: "산업 AI 혁명" },
+                    { id: 'ai_security', name: "디지털 영토 보안" }
+                ],
+                details: {
+                    ai_highway: {
+                        title: "'AI 고속도로' 건설: 인프라 및 컴퓨팅 자원",
+                        opportunities: [
+                            "**GPU 5만 장 조기 확보:** 대규모 서버 및 고성능 컴퓨팅 하드웨어 조달",
+                            "**AI 데이터센터(AIDC) 생태계 육성:** 데이터센터 건설, 전력/냉각 시스템, 엔지니어링",
+                            "**6G 이동통신 상용화:** 차세대 통신장비, 지능형 기지국, 네트워크 솔루션",
+                            "**국가 통합 데이터 플랫폼 구축:** 플랫폼 개발, 데이터 통합/표준화, 보안 솔루션"
+                        ],
+                        target: "GPU 정부 공급률 30% 이상"
+                    },
+                    ai_gov: {
+                        title: "'AI 정부' 실현: 공공 서비스 현대화",
+                        opportunities: [
+                            "**30대 핵심과제 AI 전환:** AI 납세관리, AI 신약심사 등 전문 분야 솔루션",
+                            "**범정부 AI 공통기반 플랫폼 구축:** 클라우드, AI 모델 개발, API 관리 서비스",
+                            "**AI 혁신제품 공공조달 확대:** 초기 시장 진입 및 레퍼런스 확보",
+                            "**공공데이터 개방 활용:** 데이터 기반 서비스 및 신규 AI 모델 개발"
+                        ],
+                        target: "세계 1위 AI 정부 실현"
+                    },
+                    ai_industry: {
+                        title: "산업 AI 혁명: AI 팩토리, 로봇, 모빌리티",
+                        opportunities: [
+                            "**AI 팩토리 500개소 구축:** 제조 공정 최적화, 품질 검사 자동화, 예지보전 솔루션",
+                            "**피지컬 AI(로봇) 개발 및 보급:** 물류, 제조, 건설 분야 산업용 로봇 시스템",
+                            "**AI 반도체 생태계 육성:** 차량, 가전, 로봇용 AI 반도체 개발 및 실증 사업",
+                            "**AI 모빌리티(자율주행, 드론) 상용화:** 자율주행 S/W, 센서, 드론 운용 시스템"
+                        ],
+                        target: "AI 팩토리 500개소 구축"
+                    },
+                    ai_security: {
+                        title: "디지털 영토 보안: 사이버 안보 및 데이터 거버넌스",
+                        opportunities: [
+                            "**AI 기반 사이버 보안 시스템 구축:** 위협 예측, 이상 행위 탐지, 자동화된 대응 솔루션",
+                            "**개인정보보호 강화기술(PET) 개발:** 동형암호, 연합학습 등 데이터 안심 활용 기술",
+                            "**신뢰할 수 있는 AI(Trustworthy AI) 기술:** AI 모델 설명가능성, 공정성 확보 솔루션",
+                            "**딥페이크 탐지 및 데이터 삭제 검증 기술**"
+                        ],
+                        target: "안전과 책임 기반의 'AI 기본사회' 실현"
+                    }
+                }
+            },
+            green: {
+                title: "그린 전환",
+                description: "에너지 정책을 핵심 산업 정책으로 전환, '에너지고속도로' 구축을 통해 국가 산업 구조를 재편합니다. 에너지 생산, 송배전, 산업단지 개발이 결합된 통합 솔루션 시장이 열립니다.",
+                icon: "🌿",
+                projects: [
+                    { id: 'green_grid', name: "국가 전력망 현대화" },
+                    { id: 'green_re100', name: "대규모 신재생에너지 프로젝트" },
+                    { id: 'green_carbon', name: "탄소중립 및 순환경제" }
+                ],
+                details: {
+                    green_grid: {
+                        title: "'에너지고속도로' 건설과 국가 전력망 현대화",
+                        opportunities: [
+                            "**서해안 HVDC 기간망 조기 구축:** 초고압직류송전 케이블, 변환 설비, 제어 시스템",
+                            "**에너지저장장치(ESS) 대규모 확충:** 배터리, PCS, 에너지 관리 시스템(EMS)",
+                            "**AI 기반 스마트 그리드 솔루션:** AI 수요 예측, 실시간 수요관리(DR) 시스템",
+                            "**민관협력(PPP) 전력망 건설 사업 참여**"
+                        ],
+                        target: "재생에너지 목표 상향"
+                    },
+                    green_re100: {
+                        title: "RE100 거점 전력 공급: 대규모 신재생에너지 프로젝트",
+                        opportunities: [
+                            "**대규모 해상풍력 단지 조성:** 터빈, 하부구조물, 해상 공사, 환경영향평가",
+                            "**유휴부지 활용 태양광 사업:** 산업단지 지붕, 영농형 등 맞춤형 태양광 솔루션",
+                            "**RE100 산업단지 개발:** 재생에너지 발전, 스마트 에너지 관리, 산단 개발/분양 융복합 사업"
+                        ],
+                        target: "RE100 산업단지 조성"
+                    },
+                    green_carbon: {
+                        title: "탄소중립 의무화: 기후테크 및 순환경제",
+                        opportunities: [
+                            "**수소환원제철, 바이오 원료 전환 R&D:** 관련 설비, 공정 기술, 촉매 개발",
+                            "**청정수소 및 사용후 배터리 재활용:** 수전해 설비, 수소 저장/운송, 폐배터리 재자원화 기술",
+                            "**태양광 폐패널 재활용 체계 구축:** 회수, 분리, 재자원화 설비 및 기술",
+                            "**자발적 탄소크레딧 시장 서비스:** 온실가스 감축 검증/인증, 컨설팅, 거래 플랫폼"
+                        ],
+                        target: "2030년 온실가스 40% 감축"
+                    }
+                }
+            },
+            infra: {
+                title: "미래 인프라",
+                description: "'5극3특' 국가균형발전 마스터플랜에 따라 모든 SOC, 스마트 시티 프로젝트가 추진됩니다. 지역의 전략 산업과 연계된 통합 인프라 제안이 B2G 시장 성공의 핵심입니다.",
+                icon: "🏗️",
+                projects: [
+                    { id: 'infra_region', name: "'5극3특' 지역 메가 프로젝트" },
+                    { id: 'infra_mobility', name: "미래 모빌리티 상용화" },
+                    { id: 'infra_city', name: "'K-AI 시티' 건설" }
+                ],
+                details: {
+                    infra_region: {
+                        title: "'5극3특' 비전: 지역 메가 프로젝트",
+                        opportunities: [
+                            "**2차 공공기관 이전 관련 사업:** 청사 건축, 주택 공급, 교통/생활 인프라 구축",
+                            "**첨단국가산업단지 및 도심융합특구 조성:** 도시 계획, 스마트 인프라, R&D 시설 구축",
+                            "**지역균형발전특별회계 기반 지방정부 발주 사업**"
+                        ],
+                        target: "전국 2시간대 생활권 구축"
+                    },
+                    infra_mobility: {
+                        title: "미래 모빌리티: UAM, 자율주행, 차세대 철도",
+                        opportunities: [
+                            "**자율주행 레벨 4 상용화 지원:** 자율주행 AI 학습센터 구축, 데이터 가공/시뮬레이션 플랫폼",
+                            "**도심항공교통(UAM) 허브 구축:** 버티포트 설계/시공, 관제 시스템, 충전 인프라",
+                            "**시속 400km급 고속철도망 및 GTX:** 철도 차량, 신호/통신 시스템, 궤도/터널 공사"
+                        ],
+                        target: "자율주행 레벨 4 상용화"
+                    },
+                    infra_city: {
+                        title: "'K-AI 시티' 건설: 통합 스마트 시티 솔루션",
+                        opportunities: [
+                            "**AI 특화 시범도시(규제 프리존) 조성:** 스마트 교통, 에너지, 안전 솔루션 실증 사업",
+                            "**AI 도시지능센터 및 AI 빌딩 구축:** 대규모 데이터 플랫폼, IoT 네트워크, 빌딩 자동화 시스템(BAS)",
+                            "**국토 디지털 트윈 구축:** 3D 모델링, 공간정보(GIS), 시뮬레이션 S/W"
+                        ],
+                        target: "AI 기반 미래형 도시 모델 조성"
+                    }
+                }
+            },
+            innovation: {
+                title: "혁신 성장 엔진",
+                description: "바이오·헬스케어, 국방, 항공우주를 국가전략산업으로 지정, '내셔널 챔피언' 육성을 목표로 합니다. 정부 조달이 글로벌 시장 진출의 발판이 되는 수출 지향적 B2G 시장입니다.",
+                icon: "🚀",
+                projects: [
+                    { id: 'inno_bio', name: "K-바이오 이니셔티브" },
+                    { id: 'inno_defense', name: "'방산 4대 강국' 도약" },
+                    { id: 'inno_space', name: "K-Space 도전" }
+                ],
+                details: {
+                    inno_bio: {
+                        title: "K-바이오: 디지털 헬스케어, AI 신약 개발",
+                        opportunities: [
+                            "**의료AI 전주기 투자 확대:** AI 진단 솔루션, 디지털 병원 테스트베드 참여",
+                            "**바이오 파운드리 인프라 구축:** 신약 개발 자동화 장비, S/W, 시스템 공급",
+                            "**공공의료 시스템 현대화:** 의료정보시스템(HIS) 통합, 원격 협진 시스템 구축",
+                            "**'AI 신약심사' 관련 규제 기술(RegTech) 개발**"
+                        ],
+                        target: "바이오헬스 수출 500억 달러"
+                    },
+                    inno_defense: {
+                        title: "'방산 4대 강국' 도약: 첨단 국방 시스템",
+                        opportunities: [
+                            "**미래 전장 핵심기술 R&D:** AI, 항공엔진, 우주, 드론/로봇 분야 무기체계 개발",
+                            "**유무인 복합체계(MUM-T) 개발:** AI 자율 제어, 통신 네트워크, 통합관제 시스템",
+                            "**K-방산 공급망 관리 솔루션:** 소재/부품 DB 구축, 리스크 분석 서비스",
+                            "**방산 중소·벤처기업 육성 컨설팅 및 기술 지원**"
+                        ],
+                        target: "방산 수출 세계 4대 강국 진입"
+                    },
+                    inno_space: {
+                        title: "K-Space 도전: 위성 개발 및 항공우주 R&D",
+                        opportunities: [
+                            "**우주 탐사 로드맵 R&D 참여:** 발사체, 위성체, 탑재체, 항법 시스템 개발",
+                            "**우주산업 클러스터 구축 및 운영:** 관련 인프라 건설 및 IT 시스템 구축",
+                            "**초고해상도 위성 개발 및 활용 서비스:** AI 영상 분석, 재난 감시, 환경 모니터링",
+                            "**혁신조달 제도를 통한 스타트업 정부 사업 참여**"
+                        ],
+        
+                        target: "2032년 달 착륙 추진"
+                    }
+                }
+            },
+            social: {
+                title: "사회 서비스",
+                description: "저출산·고령화, 사회적 양극화 문제 해결을 위해 '복지 기술(Welfare Tech)' 모델로 전환합니다. 데이터와 AI 기반의 맞춤형 공공 서비스 플랫폼 구축이 핵심 기회입니다.",
+                icon: "❤️",
+                projects: [
+                    { id: 'social_welfare', name: "사회 안전망 디지털 플랫폼" },
+                    { id: 'social_edu', name: "미래 인재 양성 및 에듀테크" },
+                    { id: 'social_culture', name: "K-콘텐츠 및 관광 인프라" }
+                ],
+                details: {
+                    social_welfare: {
+                        title: "사회 안전망 현대화: 복지 및 고용 디지털 플랫폼",
+                        opportunities: [
+                            "**'AI 복지·고용' 플랫폼 구축:** AI 챗봇, 추천 알고리즘, 빅데이터 분석 플랫폼",
+                            "**온라인 청년정책 통합 플랫폼 신설:** 공공 디지털 전환(DX) 및 시스템 통합(SI)",
+                            "**고독사 위기대응 시스템 구축:** 데이터 분석, 사회 안전망 솔루션, IoT 모니터링 기술"
+                        ],
+                        target: "AI 기반 24시간 맞춤형 복지/고용 지원"
+                    },
+                    social_edu: {
+                        title: "미래 인재 양성: 공교육 AI 도입과 에듀테크",
+                        opportunities: [
+                            "**학교 AI 교육 기반 마련:** AI 교육과정, 교사 연수, 실습용 S/W 및 H/W 보급",
+                            "**'AI 기반 디지털 교사' 개발:** AI 튜터링, 학습 분석, 자동 채점 시스템",
+                            "**EBS 교육 콘텐츠 확대:** 온라인 교육 콘텐츠 제작 및 플랫폼 개발/운영"
+                        ],
+                        target: "모든 학교 AI 교육 기반 마련"
+                    },
+                    social_culture: {
+                        title: "창의 국가 건설: K-콘텐츠 인프라 및 관광",
+                        opportunities: [
+                            "**중·대형 공연형 아레나 건립(PPP):** 첨단 공연 시스템, 스마트 티켓팅, 복합 공간 운영",
+                            "**AI 활용 관광 서비스 혁신:** 맞춤형 여행 추천 앱, 실시간 통역, VR/AR 콘텐츠",
+                            "**콘텐츠 제작 기술 개발:** AI 시나리오 분석, 자동 영상 편집, 가상 프로덕션"
+                        ],
+                        target: "10조원 규모 K-콘텐츠 정책 펀드 조성"
+                    }
+                }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const investmentCtx = document.getElementById('investmentChart').getContext('2d');
+            const investmentChart = new Chart(investmentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['SOC/주거', 'AI/디지털', '바이오/복지', '산업/벤처', '에너지/환경', '국방/외교', '기타'],
+                    datasets: [{
+                        label: '추가 재정 투자 (조 원)',
+                        data: [33, 25, 24, 22, 7, 5.2, 93.8],
+                        backgroundColor: [
+                            '#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#14b8a6', '#64748b', '#eab308'
+                        ],
+                        borderColor: '#ffffff',
+                        borderWidth: 2,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: "'Noto Sans KR', sans-serif",
+                                    size: 12
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed.toLocaleString() + '조 원';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+            
+            const sectionsContainer = document.getElementById('opportunity-sections');
+            let sectionsHTML = '';
+            for (const key in opportunityData) {
+                const section = opportunityData[key];
+                sectionsHTML += `
+                    <section id="${key}" class="py-16 scroll-mt-20">
+                        <div class="text-center mb-12">
+                             <span class="text-5xl">${section.icon}</span>
+                            <h3 class="text-3xl font-bold mt-4">${section.title}</h3>
+                            <p class="mt-2 max-w-2xl mx-auto text-gray-600">${section.description}</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="md:col-span-1 bg-white p-4 rounded-xl shadow-lg">
+                                <h4 class="font-semibold mb-3 px-2">주요 사업 분야</h4>
+                                <ul id="project-list-${key}" class="space-y-1">
+                                    ${section.projects.map((p, index) => `
+                                        <li class="project-item p-3 rounded-lg ${index === 0 ? 'active' : ''}" data-section="${key}" data-project-id="${p.id}">
+                                            ${p.name}
+                                        </li>
+                                    `).join('')}
+                                </ul>
+                            </div>
+                            <div id="project-details-${key}" class="md:col-span-2">
+                                <!-- Details will be rendered here by JS -->
+                            </div>
+                        </div>
+                    </section>
+                `;
+            }
+            sectionsContainer.innerHTML = sectionsHTML;
+
+            function renderDetails(sectionKey, projectId) {
+                const detailsContainer = document.getElementById(`project-details-${sectionKey}`);
+                const detailData = opportunityData[sectionKey].details[projectId];
+                
+                if (!detailData) return;
+
+                const opportunitiesHTML = detailData.opportunities.map(opp => `
+                    <li class="flex items-start">
+                        <span class="text-blue-500 mr-2 mt-1">✓</span>
+                        <span>${opp.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-gray-800">$1</strong>')}</span>
+                    </li>
+                `).join('');
+
+                detailsContainer.innerHTML = `
+                    <div class="content-card bg-white p-6 rounded-xl h-full fade-in">
+                        <h4 class="text-2xl font-bold text-blue-800">${detailData.title}</h4>
+                        <div class="mt-4 border-t pt-4">
+                            <h5 class="font-semibold mb-3 text-gray-700">핵심 사업 기회</h5>
+                            <ul class="space-y-2 text-gray-600">
+                                ${opportunitiesHTML}
+                            </ul>
+                        </div>
+                        <div class="mt-6 bg-blue-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-blue-900">주요 목표</h5>
+                            <p class="text-blue-800">${detailData.target}</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.querySelectorAll('.project-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    const sectionKey = e.currentTarget.dataset.section;
+                    const projectId = e.currentTarget.dataset.projectId;
+
+                    document.querySelectorAll(`#project-list-${sectionKey} .project-item`).forEach(el => el.classList.remove('active'));
+                    e.currentTarget.classList.add('active');
+
+                    renderDetails(sectionKey, projectId);
+                });
+            });
+
+            for (const key in opportunityData) {
+                renderDetails(key, opportunityData[key].projects[0].id);
+            }
+
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('section[id]');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        navLinks.forEach(link => {
+                            link.classList.toggle('active', link.getAttribute('href').substring(1) === entry.target.id);
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => observer.observe(section));
+            
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
